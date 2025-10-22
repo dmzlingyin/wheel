@@ -18,7 +18,8 @@
 wheel/
 ├── network/          # 网络协议实现
 │   ├── tcp/         # TCP 客户端/服务器
-│   └── http/        # HTTP 服务器
+│   ├── http/        # HTTP 服务器
+│   └── smtp/        # SMTP 邮件服务器
 ├── go.mod
 └── README.md
 ```
@@ -28,11 +29,12 @@ wheel/
 ### 网络协议
 - **TCP**: 基础的 TCP 服务器和客户端
 - **HTTP**: 自定义 HTTP 服务器，支持 GET/POST 方法
+- **SMTP**: 简单邮件传输协议服务器，支持 HELO/EHLO、MAIL FROM、RCPT TO、DATA、QUIT 命令
 
 ## 📋 计划实现
 
 ### 网络协议
-- [ ] SMTP - 简单邮件传输协议
+- [x] SMTP - 简单邮件传输协议
 - [ ] FTP - 文件传输协议
 - [ ] DNS - 域名系统
 - [ ] DHCP - 动态主机配置协议
@@ -70,12 +72,37 @@ curl http://localhost:3000/
 curl -X POST -H "Content-Type: application/json" -d '{"option":"ping"}' http://localhost:3000/
 ```
 
+### 运行 SMTP 服务器
+```bash
+go run network/smtp/server.go
+```
+
+### 测试 SMTP 服务器
+使用 telnet 或 nc 连接测试：
+```bash
+telnet localhost 3000
+```
+
+SMTP 测试流程：
+```
+HELO example.com
+MAIL FROM: <sender@example.com>
+RCPT TO: <user1@example.com>
+DATA
+Subject: Test Email
+
+This is a test email content.
+.
+QUIT
+```
+
 ## 🎓 学习价值
 
 通过这个项目，你将学习到：
 
 - **网络协议原理**：理解 TCP/IP 协议栈的工作方式
 - **HTTP 协议细节**：掌握 HTTP 请求/响应的完整格式
+- **SMTP 协议流程**：理解邮件传输协议的命令交互过程
 - **并发编程**：使用 goroutine 处理并发连接
 - **系统编程**：深入理解操作系统与网络的关系
 - **调试技巧**：学会分析和调试网络通信问题
