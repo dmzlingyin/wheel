@@ -18,8 +18,10 @@
 wheel/
 ├── network/          # 网络协议实现
 │   ├── tcp/         # TCP 客户端/服务器
+│   ├── udp/         # UDP 客户端/服务器
 │   ├── http/        # HTTP 服务器
-│   └── smtp/        # SMTP 邮件服务器
+│   ├── smtp/        # SMTP 邮件服务器
+│   └── dns/         # DNS 客户端实现
 ├── go.mod
 └── README.md
 ```
@@ -27,7 +29,9 @@ wheel/
 ## 🚀 已实现功能
 
 ### 网络协议
-- **TCP**: 基础的 TCP 服务器和客户端
+- **TCP**: 基础的 TCP 服务器和客户端，展示面向连接的通信
+- **UDP**: 基础的 UDP 服务器和客户端，展示无连接的快速通信
+- **DNS**: DNS 客户端实现，完整实现 DNS 查询报文构建和解析过程
 - **HTTP**: 自定义 HTTP 服务器，支持 GET/POST 方法
 - **SMTP**: 简单邮件传输协议服务器，支持 HELO/EHLO、MAIL FROM、RCPT TO、DATA、QUIT 命令
 
@@ -35,8 +39,10 @@ wheel/
 
 ### 网络协议
 - [x] SMTP - 简单邮件传输协议
+- [x] UDP - 用户数据报协议
+- [x] DNS - 域名系统客户端
+- [ ] DNS - 域名系统服务器
 - [ ] FTP - 文件传输协议
-- [ ] DNS - 域名系统
 - [ ] DHCP - 动态主机配置协议
 - [ ] WebSocket - 实时通信协议
 
@@ -96,6 +102,22 @@ This is a test email content.
 QUIT
 ```
 
+### 运行 UDP 服务器
+```bash
+go run network/udp/server.go
+```
+
+### 测试 UDP 客户端
+```bash
+go run network/udp/client.go
+```
+
+### 运行 DNS 客户端
+```bash
+go run network/dns/client.go
+```
+该客户端会向 DNS 服务器查询 `www.baidu.com` 的 IP 地址
+
 ## 🎓 学习价值
 
 通过这个项目，你将学习到：
@@ -103,6 +125,8 @@ QUIT
 - **网络协议原理**：理解 TCP/IP 协议栈的工作方式
 - **HTTP 协议细节**：掌握 HTTP 请求/响应的完整格式
 - **SMTP 协议流程**：理解邮件传输协议的命令交互过程
+- **UDP 无连接通信**：对比 TCP 连接和 UDP 无连接的区别
+- **DNS 协议解析**：理解域名解析的完整过程和报文格式
 - **并发编程**：使用 goroutine 处理并发连接
 - **系统编程**：深入理解操作系统与网络的关系
 - **调试技巧**：学会分析和调试网络通信问题
