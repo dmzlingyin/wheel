@@ -117,8 +117,8 @@ func main() {
 
 	// 指定DNS服务器的IP和端口
 	socket, err := net.DialUDP("udp", nil, &net.UDPAddr{
-		IP:   net.IPv4(192, 168, 4, 1),
-		Port: 53,
+		IP:   net.IPv4(127, 0, 0, 1),
+		Port: 3000,
 	})
 	if err != nil {
 		panic(err)
