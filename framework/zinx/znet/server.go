@@ -3,6 +3,7 @@ package znet
 import (
 	"fmt"
 	"net"
+	"wheel/framework/zinx/utils"
 	"wheel/framework/zinx/ziface"
 )
 
@@ -14,18 +15,21 @@ type Server struct {
 	Router    ziface.IRouter
 }
 
-func NewServer(name string) ziface.IServer {
+func NewServer() ziface.IServer {
 	return &Server{
-		Name:      name,
+		Name:      utils.GlobalObject.Name,
 		IPVersion: "tcp4",
-		Addr:      "0.0.0.0",
-		Port:      8888,
+		Addr:      utils.GlobalObject.Host,
+		Port:      utils.GlobalObject.TcpPort,
 	}
 }
 
 func (s *Server) Start() {
 	fmt.Printf("server name[%s] ip[%s] port[%d]\n", s.Name, s.IPVersion, s.Port)
-
+	fmt.Printf("[Zinx] Version: %s, MaxConn: %d,  MaxPacketSize: %d\n",
+		utils.GlobalObject.Version,
+		utils.GlobalObject.MaxConn,
+		utils.GlobalObject.MaxPacketSize)
 	go func() {
 		addr, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.Addr, s.Port))
 		if err != nil {

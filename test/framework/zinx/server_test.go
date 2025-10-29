@@ -26,7 +26,7 @@ func (cr *CustomRouter) PostHandle(request ziface.IRequest) {
 }
 
 func TestServer(t *testing.T) {
-	s := znet.NewServer("zinx v0.3")
+	s := znet.NewServer()
 	s.AddRouter(&CustomRouter{})
 	s.Serve()
 }
