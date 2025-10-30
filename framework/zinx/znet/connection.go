@@ -48,7 +48,9 @@ func (c *Connection) startReader() {
 			c.ExitBuffChan <- true
 			return
 		}
+
 		// 拆包
+		// 能否把 c 传进去, 在 unpack 方法里面读取数据呢?
 		msg, err := dp.Unpack(headData)
 		if err != nil {
 			fmt.Println("unpack error:", err)
@@ -59,7 +61,7 @@ func (c *Connection) startReader() {
 		var data []byte
 		if msg.GetDataLen() > 0 {
 			data = make([]byte, msg.GetDataLen())
-			if _, err := io.ReadFull(c.GetTCPConn(), data); err != nil {
+			if _, err = io.ReadFull(c.GetTCPConn(), data); err != nil {
 				fmt.Println("read msg data error:", err)
 				c.ExitBuffChan <- true
 				return
