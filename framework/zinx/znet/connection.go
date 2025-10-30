@@ -2,6 +2,7 @@ package znet
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"wheel/framework/zinx/ziface"
 )
@@ -40,15 +41,33 @@ func (c *Connection) startReader() {
 	defer c.Stop()
 
 	for {
-		buf := make([]byte, 512)
-		cnt, err := c.Conn.Read(buf)
-		if err != nil {
-			fmt.Println("reader error:", err)
+		dp := NewDataPack()
+		headData := make([]byte, dp.GetHeadLen())
+		if _, err := io.ReadFull(c.GetTCPConn(), headData); err != nil {
+			fmt.Println("read head error:", err)
 			c.ExitBuffChan <- true
-			continue
+			return
+		}
+		// 拆包
+		msg, err := dp.Unpack(headData)
+		if err != nil {
+			fmt.Println("unpack error:", err)
+			c.ExitBuffChan <- true
+			return
 		}
 
-		req := Request{conn: c, data: buf[:cnt]}
+		var data []byte
+		if msg.GetDataLen() > 0 {
+			data = make([]byte, msg.GetDataLen())
+			if _, err := io.ReadFull(c.GetTCPConn(), data); err != nil {
+				fmt.Println("read msg data error:", err)
+				c.ExitBuffChan <- true
+				return
+			}
+		}
+		msg.SetData(data)
+
+		req := Request{conn: c, msg: msg}
 		go func(request ziface.IRequest) {
 			c.Router.PreHandle(request)
 			c.Router.Handle(request)
