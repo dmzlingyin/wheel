@@ -1,6 +1,7 @@
 package znet
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -13,6 +14,7 @@ type Connection struct {
 	isClosed     bool
 	ExitBuffChan chan bool
 	MsgHandler   ziface.IMsgHandler
+	msgChan      chan []byte
 }
 
 func NewConnection(conn *net.TCPConn, connID uint32, msgHandler ziface.IMsgHandler) *Connection {
@@ -22,11 +24,13 @@ func NewConnection(conn *net.TCPConn, connID uint32, msgHandler ziface.IMsgHandl
 		isClosed:     false,
 		ExitBuffChan: make(chan bool, 1),
 		MsgHandler:   msgHandler,
+		msgChan:      make(chan []byte),
 	}
 }
 
 func (c *Connection) Start() {
 	go c.startReader()
+	go c.startWriter()
 
 	for {
 		select {
@@ -74,6 +78,22 @@ func (c *Connection) startReader() {
 	}
 }
 
+func (c *Connection) startWriter() {
+	fmt.Println("start writer ...")
+	for {
+		select {
+		case data := <-c.msgChan:
+			if _, err := c.Conn.Write(data); err != nil {
+				fmt.Println("write msg error:", err)
+				c.ExitBuffChan <- true
+				return
+			}
+		case <-c.ExitBuffChan:
+			return
+		}
+	}
+}
+
 func (c *Connection) Stop() {
 	if c.isClosed {
 		return
@@ -94,4 +114,20 @@ func (c *Connection) GetRemoteAddr() net.Addr {
 
 func (c *Connection) GetConnID() uint32 {
 	return c.ConnID
+}
+
+func (c *Connection) SendMsg(msgID uint32, data []byte) error {
+	if c.isClosed {
+		return errors.New("connection closed")
+	}
+
+	dp := NewDataPack()
+	msg, err := dp.Pack(NewMsgPackage(msgID, data))
+	if err != nil {
+		return err
+	}
+
+	c.msgChan <- msg
+
+	return nil
 }

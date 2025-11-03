@@ -8,4 +8,5 @@ type IConnection interface {
 	GetTCPConn() *net.TCPConn
 	GetRemoteAddr() net.Addr
 	GetConnID() uint32
+	SendMsg(uint32, []byte) error
 }
