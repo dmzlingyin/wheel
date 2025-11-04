@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -28,13 +30,16 @@ func main() {
 	if err = login(controlConn, reader); err != nil {
 		log.Fatalln(err)
 	}
-	// 指定被动模式
-	addr, err := setPassiveMode(controlConn, reader)
-	if err != nil {
+	// 获取文件列表
+	if err = list(controlConn, reader); err != nil {
 		log.Fatalln(err)
 	}
-	// 获取文件列表
-	if err = list(controlConn, reader, addr); err != nil {
+	// 下载 ftp-demo.txt
+	if err = download(controlConn, reader); err != nil {
+		log.Fatalln(err)
+	}
+	// 退出
+	if err = exit(controlConn, reader); err != nil {
 		log.Fatalln(err)
 	}
 }
@@ -119,7 +124,12 @@ func setPassiveMode(conn net.Conn, r *bufio.Reader) (string, error) {
 	return fmt.Sprintf("%s:%d", ip, port), nil
 }
 
-func list(conn net.Conn, r *bufio.Reader, addr string) error {
+func list(conn net.Conn, r *bufio.Reader) error {
+	// 指定被动模式
+	addr, err := setPassiveMode(conn, r)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	// 建立数据连接
 	dataConn, err := net.Dial("tcp", addr)
 	if err != nil {
@@ -163,6 +173,68 @@ func list(conn net.Conn, r *bufio.Reader, addr string) error {
 	}
 	log.Println("---------------------------------------------------")
 
+	return nil
+}
+
+func download(conn net.Conn, r *bufio.Reader) error {
+	// 指定被动模式
+	addr, err := setPassiveMode(conn, r)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	// 建立数据连接
+	dataConn, err := net.Dial("tcp", addr)
+	if err != nil {
+		return err
+	}
+	defer dataConn.Close()
+
+	if err = sendCommand(conn, "RETR ftp-demo.txt"); err != nil {
+		return err
+	}
+	code, msg, err := read(r)
+	if err != nil {
+		return err
+	}
+	if code != 150 && code != 125 {
+		return errors.New(fmt.Sprintf("invalid response code: %d, message: %s", code, msg))
+	}
+
+	f, err := os.Create("./network/ftp/ftp-demo.txt")
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	n, err := io.Copy(f, dataConn)
+	if err != nil {
+		return err
+	}
+	log.Printf("[step 5] download file, bytes: %d", n)
+
+	code, msg, err = read(r)
+	if err != nil {
+		return err
+	}
+	if code != 226 && code != 250 {
+		return errors.New(fmt.Sprintf("invalid response code: %d, message: %s", code, msg))
+	}
+
+	return nil
+}
+
+func exit(conn net.Conn, r *bufio.Reader) error {
+	if err := sendCommand(conn, "QUIT"); err != nil {
+		return err
+	}
+	code, msg, err := read(r)
+	if err != nil {
+		return err
+	}
+	if code != 221 {
+		return errors.New(fmt.Sprintf("invalid response code: %d, message: %s", code, msg))
+	}
+	log.Printf("[step 6] exit resp: (code: %d msg: %s)", code, msg)
 	return nil
 }
 
