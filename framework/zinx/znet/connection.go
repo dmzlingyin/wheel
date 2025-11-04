@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"wheel/framework/zinx/utils"
 	"wheel/framework/zinx/ziface"
 )
 
@@ -74,7 +75,11 @@ func (c *Connection) startReader() {
 		msg.SetData(data)
 
 		req := Request{conn: c, msg: msg}
-		go c.MsgHandler.DoMsgHandler(&req)
+		if utils.GlobalObject.WorkerPoolSize > 0 {
+			c.MsgHandler.SendMsgToTaskQueue(&req)
+		} else {
+			go c.MsgHandler.DoMsgHandler(&req)
+		}
 	}
 }
 

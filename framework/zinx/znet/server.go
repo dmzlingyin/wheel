@@ -32,7 +32,11 @@ func (s *Server) Start() {
 		utils.GlobalObject.Version,
 		utils.GlobalObject.MaxConn,
 		utils.GlobalObject.MaxPacketSize)
+
 	go func() {
+		// 启动工作池
+		s.msgHandler.StartWorkPool()
+
 		addr, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.Addr, s.Port))
 		if err != nil {
 			fmt.Println("resolve tcp addr err:", err)
@@ -55,6 +59,7 @@ func (s *Server) Start() {
 			}
 			dealConn := NewConnection(conn, cid, s.msgHandler)
 			go dealConn.Start()
+			cid++
 		}
 	}()
 }
