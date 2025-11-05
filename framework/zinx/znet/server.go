@@ -8,21 +8,25 @@ import (
 )
 
 type Server struct {
-	Name       string
-	IPVersion  string
-	Addr       string
-	Port       int
-	Router     ziface.IRouter
-	msgHandler ziface.IMsgHandler
+	Name        string
+	IPVersion   string
+	Addr        string
+	Port        int
+	Router      ziface.IRouter
+	msgHandler  ziface.IMsgHandler
+	connManager ziface.IConnManager
+	OnConnStart func(ziface.IConnection)
+	OnConnStop  func(ziface.IConnection)
 }
 
 func NewServer() ziface.IServer {
 	return &Server{
-		Name:       utils.GlobalObject.Name,
-		IPVersion:  "tcp4",
-		Addr:       utils.GlobalObject.Host,
-		Port:       utils.GlobalObject.TcpPort,
-		msgHandler: NewMsgHandle(),
+		Name:        utils.GlobalObject.Name,
+		IPVersion:   "tcp4",
+		Addr:        utils.GlobalObject.Host,
+		Port:        utils.GlobalObject.TcpPort,
+		msgHandler:  NewMsgHandle(),
+		connManager: NewConnManager(),
 	}
 }
 
@@ -57,7 +61,14 @@ func (s *Server) Start() {
 				fmt.Println("accept err:", err)
 				continue
 			}
-			dealConn := NewConnection(conn, cid, s.msgHandler)
+
+			// 判断连接数量
+			if s.connManager.Len() >= utils.GlobalObject.MaxConn {
+				conn.Close()
+				continue
+			}
+
+			dealConn := NewConnection(s, conn, cid, s.msgHandler)
 			go dealConn.Start()
 			cid++
 		}
@@ -66,6 +77,7 @@ func (s *Server) Start() {
 
 func (s *Server) Stop() {
 	fmt.Println("server stop")
+	s.connManager.CleanConn()
 }
 
 func (s *Server) Serve() {
@@ -77,4 +89,28 @@ func (s *Server) Serve() {
 
 func (s *Server) AddRouter(msgID uint32, router ziface.IRouter) {
 	s.msgHandler.AddRouter(msgID, router)
+}
+
+func (s *Server) GetConnMgr() ziface.IConnManager {
+	return s.connManager
+}
+
+func (s *Server) SetOnConnStart(f func(ziface.IConnection)) {
+	s.OnConnStart = f
+}
+
+func (s *Server) SetOnConnStop(f func(ziface.IConnection)) {
+	s.OnConnStop = f
+}
+
+func (s *Server) CallOnConnStart(conn ziface.IConnection) {
+	if s.OnConnStart != nil {
+		s.OnConnStart(conn)
+	}
+}
+
+func (s *Server) CallOnConnStop(conn ziface.IConnection) {
+	if s.OnConnStop != nil {
+		s.OnConnStop(conn)
+	}
 }

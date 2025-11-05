@@ -10,28 +10,36 @@ import (
 )
 
 type Connection struct {
+	TcpServer    ziface.IServer
 	Conn         *net.TCPConn
 	ConnID       uint32
 	isClosed     bool
 	ExitBuffChan chan bool
 	MsgHandler   ziface.IMsgHandler
-	msgChan      chan []byte
+	msgChan      chan []byte // 无缓冲
+	msgBuffChan  chan []byte // 有缓冲
 }
 
-func NewConnection(conn *net.TCPConn, connID uint32, msgHandler ziface.IMsgHandler) *Connection {
-	return &Connection{
+func NewConnection(server ziface.IServer, conn *net.TCPConn, connID uint32, msgHandler ziface.IMsgHandler) *Connection {
+	c := &Connection{
+		TcpServer:    server,
 		Conn:         conn,
 		ConnID:       connID,
 		isClosed:     false,
 		ExitBuffChan: make(chan bool, 1),
 		MsgHandler:   msgHandler,
 		msgChan:      make(chan []byte),
+		msgBuffChan:  make(chan []byte, utils.GlobalObject.MaxMsgChanLen),
 	}
+	c.TcpServer.GetConnMgr().Add(c)
+	return c
 }
 
 func (c *Connection) Start() {
 	go c.startReader()
 	go c.startWriter()
+
+	c.TcpServer.CallOnConnStart(c)
 
 	for {
 		select {
@@ -93,6 +101,16 @@ func (c *Connection) startWriter() {
 				c.ExitBuffChan <- true
 				return
 			}
+		case data, ok := <-c.msgBuffChan:
+			if ok {
+				if _, err := c.Conn.Write(data); err != nil {
+					fmt.Println("write msg error:", err)
+					c.ExitBuffChan <- true
+					return
+				}
+			} else {
+				break
+			}
 		case <-c.ExitBuffChan:
 			return
 		}
@@ -104,9 +122,12 @@ func (c *Connection) Stop() {
 		return
 	}
 	c.isClosed = true
+	c.TcpServer.CallOnConnStop(c)
 	c.Conn.Close()
 	c.ExitBuffChan <- true
+	c.TcpServer.GetConnMgr().Remove(c)
 	close(c.ExitBuffChan)
+	close(c.msgBuffChan)
 }
 
 func (c *Connection) GetTCPConn() *net.TCPConn {
@@ -133,6 +154,22 @@ func (c *Connection) SendMsg(msgID uint32, data []byte) error {
 	}
 
 	c.msgChan <- msg
+
+	return nil
+}
+
+func (c *Connection) SendBuffMsg(msgID uint32, data []byte) error {
+	if c.isClosed {
+		return errors.New("connection closed")
+	}
+
+	dp := NewDataPack()
+	msg, err := dp.Pack(NewMsgPackage(msgID, data))
+	if err != nil {
+		return err
+	}
+
+	c.msgBuffChan <- msg
 
 	return nil
 }

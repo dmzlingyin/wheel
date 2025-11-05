@@ -9,4 +9,5 @@ type IConnection interface {
 	GetRemoteAddr() net.Addr
 	GetConnID() uint32
 	SendMsg(uint32, []byte) error
+	SendBuffMsg(uint32, []byte) error
 }
