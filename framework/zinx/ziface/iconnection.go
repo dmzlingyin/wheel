@@ -10,4 +10,7 @@ type IConnection interface {
 	GetConnID() uint32
 	SendMsg(uint32, []byte) error
 	SendBuffMsg(uint32, []byte) error
+	SetProperty(string, any)
+	GetProperty(string) (any, error)
+	RemoveProperty(string)
 }
