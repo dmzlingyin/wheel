@@ -2,7 +2,7 @@ package znet
 
 import (
 	"fmt"
-	"wheel/framework/zinx/utils"
+	"wheel/framework/zinx/zconf"
 	"wheel/framework/zinx/ziface"
 )
 
@@ -15,8 +15,8 @@ type MsgHandle struct {
 func NewMsgHandle() *MsgHandle {
 	return &MsgHandle{
 		Apis:         make(map[uint32]ziface.IRouter),
-		WorkPoolSize: utils.GlobalObject.WorkerPoolSize,
-		TaskQueue:    make([]chan ziface.IRequest, utils.GlobalObject.WorkerPoolSize),
+		WorkPoolSize: zconf.GlobalObject.WorkerPoolSize,
+		TaskQueue:    make([]chan ziface.IRequest, zconf.GlobalObject.WorkerPoolSize),
 	}
 }
 
@@ -42,7 +42,7 @@ func (m *MsgHandle) AddRouter(msgID uint32, router ziface.IRouter) {
 
 func (m *MsgHandle) StartWorkPool() {
 	for i := 0; i < int(m.WorkPoolSize); i++ {
-		m.TaskQueue[i] = make(chan ziface.IRequest, utils.GlobalObject.MaxWorkerTaskLen)
+		m.TaskQueue[i] = make(chan ziface.IRequest, zconf.GlobalObject.MaxWorkerTaskLen)
 		go func(id int) {
 			fmt.Println("worker ", id, " is started...")
 			for {

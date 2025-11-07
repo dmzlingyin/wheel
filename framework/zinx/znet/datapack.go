@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"wheel/framework/zinx/utils"
+	"wheel/framework/zinx/zconf"
 	"wheel/framework/zinx/ziface"
 )
 
@@ -42,7 +42,7 @@ func (dp *DataPack) Unpack(binaryData []byte) (ziface.IMessage, error) {
 	if err := binary.Read(buf, binary.LittleEndian, &msg.Id); err != nil {
 		return nil, err
 	}
-	if utils.GlobalObject.MaxPacketSize > 0 && msg.DataLen > utils.GlobalObject.MaxPacketSize {
+	if zconf.GlobalObject.MaxPacketSize > 0 && msg.DataLen > zconf.GlobalObject.MaxPacketSize {
 		return nil, errors.New("too large msg")
 	}
 	return msg, nil

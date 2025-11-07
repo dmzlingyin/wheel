@@ -6,7 +6,7 @@ import (
 	"io"
 	"net"
 	"sync"
-	"wheel/framework/zinx/utils"
+	"wheel/framework/zinx/zconf"
 	"wheel/framework/zinx/ziface"
 )
 
@@ -32,7 +32,7 @@ func NewConnection(server ziface.IServer, conn *net.TCPConn, connID uint32, msgH
 		ExitBuffChan: make(chan bool, 1),
 		MsgHandler:   msgHandler,
 		msgChan:      make(chan []byte),
-		msgBuffChan:  make(chan []byte, utils.GlobalObject.MaxMsgChanLen),
+		msgBuffChan:  make(chan []byte, zconf.GlobalObject.MaxMsgChanLen),
 		property:     make(map[string]any),
 	}
 	c.TcpServer.GetConnMgr().Add(c)
@@ -87,7 +87,7 @@ func (c *Connection) startReader() {
 		msg.SetData(data)
 
 		req := Request{conn: c, msg: msg}
-		if utils.GlobalObject.WorkerPoolSize > 0 {
+		if zconf.GlobalObject.WorkerPoolSize > 0 {
 			c.MsgHandler.SendMsgToTaskQueue(&req)
 		} else {
 			go c.MsgHandler.DoMsgHandler(&req)

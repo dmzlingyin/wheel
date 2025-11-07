@@ -3,7 +3,7 @@ package znet
 import (
 	"fmt"
 	"net"
-	"wheel/framework/zinx/utils"
+	"wheel/framework/zinx/zconf"
 	"wheel/framework/zinx/ziface"
 )
 
@@ -21,10 +21,10 @@ type Server struct {
 
 func NewServer() ziface.IServer {
 	return &Server{
-		Name:        utils.GlobalObject.Name,
+		Name:        zconf.GlobalObject.Name,
 		IPVersion:   "tcp4",
-		Addr:        utils.GlobalObject.Host,
-		Port:        utils.GlobalObject.TcpPort,
+		Addr:        zconf.GlobalObject.Host,
+		Port:        zconf.GlobalObject.TcpPort,
 		msgHandler:  NewMsgHandle(),
 		connManager: NewConnManager(),
 	}
@@ -33,9 +33,9 @@ func NewServer() ziface.IServer {
 func (s *Server) Start() {
 	fmt.Printf("server name[%s] ip[%s] port[%d]\n", s.Name, s.IPVersion, s.Port)
 	fmt.Printf("[Zinx] Version: %s, MaxConn: %d,  MaxPacketSize: %d\n",
-		utils.GlobalObject.Version,
-		utils.GlobalObject.MaxConn,
-		utils.GlobalObject.MaxPacketSize)
+		zconf.GlobalObject.Version,
+		zconf.GlobalObject.MaxConn,
+		zconf.GlobalObject.MaxPacketSize)
 
 	go func() {
 		// 启动工作池
@@ -63,7 +63,7 @@ func (s *Server) Start() {
 			}
 
 			// 判断连接数量
-			if s.connManager.Len() >= utils.GlobalObject.MaxConn {
+			if s.connManager.Len() >= zconf.GlobalObject.MaxConn {
 				conn.Close()
 				continue
 			}

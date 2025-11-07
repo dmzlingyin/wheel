@@ -1,4 +1,4 @@
-package utils
+package zconf
 
 import (
 	"encoding/json"
@@ -22,7 +22,7 @@ type GlobalObj struct {
 }
 
 func (g *GlobalObj) Reload() {
-	f, err := os.Open("conf/zinx.json")
+	f, err := os.Open("zconf/zinx.json")
 	if err != nil {
 		panic(err)
 	}
@@ -32,7 +32,7 @@ func (g *GlobalObj) Reload() {
 	if err != nil {
 		panic(err)
 	}
-	if err = json.Unmarshal(data, &GlobalObject); err != nil {
+	if err = json.Unmarshal(data, GlobalObject); err != nil {
 		panic(err)
 	}
 }
